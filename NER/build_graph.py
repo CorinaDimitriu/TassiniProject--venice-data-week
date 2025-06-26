@@ -3,7 +3,7 @@ import networkx as nx
 
 def build_graph(entity_file):
     G = nx.Graph()
-    with open(entity_file, 'r') as ef:
+    with open(entity_file, 'r', encoding='utf-18') as ef:
         for line in ef.readlines():
             line = line.strip().lstrip('%').strip()
             split_line = line.split('%')
@@ -23,4 +23,4 @@ def build_graph(entity_file):
     return G
 
 
-build_graph("temporary_NER_results.txt")
+build_graph("NER\\temporary_NER_results.txt")
