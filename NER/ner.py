@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 from langchain_openai import ChatOpenAI
 
-with open("D:\\Facultate\\openaikey.txt", 'r') as f:
+with open("D:\\Facultate\\Venice Data Week\\openaikey.txt", 'r') as f:
     cont = f.readlines()
 
 params = dict((v.replace('\n', '').split('=')) for v in cont)
@@ -15,12 +15,46 @@ def get_client_with_different_temp(temp: float = 0.7) -> ChatOpenAI:
         temperature=temp
     )
 
-def get_paras(in_file):
-    with open(in_file, 'r'):
-        place =
-        entities =
-    with open("NER_results.txt", "w") as out:
-        print(f'%{place}\n{entities}', file=out, flush=True)
+
+def solve_paras(filepath):
+    place_to_text = {}
+    with open(filepath, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    state = "looking_for_place"
+    place_lines = []
+    text_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped == '&':
+            if place_lines and text_lines:
+                place = ' '.join([l.strip('%').strip() for l in place_lines]).strip()
+                text = '\n'.join(text_lines).strip()
+                place_to_text[place] = text
+            # Reset for next block
+            place_lines = []
+            text_lines = []
+            state = "looking_for_place"
+        elif state == "looking_for_place":
+            if stripped.startswith('%'):
+                place_lines.append(stripped)
+                state = "reading_place"
+                if stripped.endswith('%'):
+                    state = "reading_text"
+        elif state == "reading_place":
+            place_lines.append(stripped)
+            if stripped.endswith('%'):
+                state = "reading_text"
+        elif state == "reading_text":
+            text_lines.append(line.rstrip())
+
+    with open("NER\\NER_results.txt", "w") as out:
+        for place, in_text in place_to_text.items():
+            entities = guess_agent.invoke({'Text Input': in_text}).content
+            entities_split = entities.split('#')
+            if place in entities_split:
+                entities_split.remove(place)
+                entities = '#'.join(entities_split).strip('#')
+            print(f'%{place}%{entities}\n', file=out, flush=True)
 
 
 base_system_msg = '''
@@ -49,9 +83,11 @@ torri che aveva sul comignolo.""", "Giustinian#palazzo delle due torri"),
  castel lo nel Trivigiano, e fino dal 982 trovavasi fra noi. Fece parte nel 1212 delle cavallerie spedite
  nell’isola di Candia. Si estinse in Venezia nel 1583.""", "Pasqualigo#Noal#Anovale#Noale#«Genealogie»#Marco Barbaro#"
                                                            "«Cronolog. di famiglie Nob. Ven. in Candia»#Muazzo#,"
-     "Marciana#Candia#Il Ponte di Noal#Sestier di Cannaregio#Santa Fosca#Anoval#casa#Ponte#XIII#"
-     "«Codice del Piovego»#1298#Pontis#Noale#1379#S. Fuscae#Chioggia#S. Fosca#castel#Trivigiano#982#"
-     "1212#Venezia#1583"),
+                                                           "Marciana#Candia#Il Ponte di Noal#Sestier di Cannaregio#"
+                                                           "Santa Fosca#Anoval#casa#Ponte#XIII#"
+                                                           "«Codice del Piovego»#1298#Pontis#Noale#1379#"
+                                                           "S. Fuscae#Chioggia#S. Fosca#castel#Trivigiano#982#"
+                                                           "1212#Venezia#1583"),
     ("""Non sappiamo perché questo Sottoportico, che r eca il N. A. 663, 
 e che ricorda una famiglia Novello, altre volte qui domiciliata, manchi del suo nome scritto sulla muraglia, 
 mentre lo troviamo nell’Anagrafi stampata per cura del Municipio nel 1841.""",
@@ -82,10 +118,8 @@ chatgpt_llm = get_client_with_different_temp()
 
 guess_agent = guess_prompt | chatgpt_llm
 
-all_paras = []
-for para in all_paras:
-    res = guess_agent.invoke({'Text Input': para}).content
+solve_paras("out\\text_with_places_clean.txt")
 
-print(guess_agent.invoke({'Text Input': """Non sappiamo perché questo Sottoportico, che r eca il N. A. 663, 
-e che ricorda una famiglia Novello, altre volte qui domiciliata, manchi del suo nome scritto sulla muraglia, 
-mentre lo troviamo nell’Anagrafi stampata per cura del Municipio nel 1841."""}).content)
+# print(guess_agent.invoke({'Text Input': """Non sappiamo perché questo Sottoportico, che r eca il N. A. 663,
+# e che ricorda una famiglia Novello, altre volte qui domiciliata, manchi del suo nome scritto sulla muraglia,
+# mentre lo troviamo nell’Anagrafi stampata per cura del Municipio nel 1841."""}).content)
