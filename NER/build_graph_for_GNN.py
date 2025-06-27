@@ -47,6 +47,7 @@ def build_qa_pairs(entity_file):
             place = split_line[0]
             entities = split_line[1].split('#')
             qa_pairs.append({"question_entities": entities, "answer_place": place})
+    return qa_pairs
 
 
 # build_qa_pairs("NER\\NER_results.txt")
